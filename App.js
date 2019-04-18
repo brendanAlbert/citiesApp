@@ -3,8 +3,11 @@ import {
   Platform,
   StyleSheet,
   Text,
-  View
+  View,
+  AsyncStorage
 } from 'react-native';
+
+const key = 'state'
 
 import Tabs from './src';
 
@@ -12,11 +15,29 @@ export default class App extends Component {
   state = {
     cities: []
   }
+
+
+  async componentDidMount() {
+    try {
+      let cities = await AsyncStorage.getItem(key)
+      if (cities !== null) {
+        cities = JSON.parse(cities)
+        this.setState({ cities })
+      }
+    } catch (e) {
+      console.log(`error from AsyncStorage: ${e}`)
+    }
+  }
+
   addCity = (city) => {
     const cities = this.state.cities;
     cities.push(city);
     this.setState({cities});
+    AsyncStorage.setItem(key, JSON.stringify(cities))
+    .then( () => console.log('storage update!'))
+    .catch( e => console.log(`e : ${e}`))
   }
+
   addLocation = (location, city) => {
     const index = this.state.cities.findIndex(item => {
       return item.id === city.id;
@@ -28,7 +49,11 @@ export default class App extends Component {
       chosenCity,
       ...this.state.cities.slice(index + 1)
     ]
-    this.setState({cities})
+    this.setState({cities} , () => {
+      AsyncStorage.setItem(key, JSON.stringify(cities))
+      .then( () => console.log(`storage updated`))
+      .catch( e => console.log(`e : ${e}`))
+    })
   }
 
   render() {
